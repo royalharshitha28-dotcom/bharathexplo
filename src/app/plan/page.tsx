@@ -24,126 +24,33 @@ export default function Planner() {
         setLoading(true);
         
         try {
-            // Simulate generation delay for realism
-            await new Promise(resolve => setTimeout(resolve, 1800));
-            
-            const selectedInterests = interests.length > 0 ? interests : ['Heritage', 'Nature'];
-            
-            // Smart template-based itinerary generator
-            const timeSlots = ['Morning', 'Afternoon', 'Evening'];
-            const activityTemplates: Record<string, string[]> = {
-                Heritage: [
-                    `Morning: Visit the historic old town and iconic monuments of ${destination}`,
-                    `Afternoon: Explore ancient forts and heritage museums`,
-                    `Afternoon: Guided tour of UNESCO-listed heritage sites`,
-                    `Morning: Photography walk through heritage districts`,
-                ],
-                Nature: [
-                    `Morning: Sunrise trek through scenic landscapes near ${destination}`,
-                    `Afternoon: Nature walk and birdwatching at local sanctuaries`,
-                    `Morning: Boat ride through serene backwaters`,
-                    `Evening: Sunset point viewing and nature photography`,
-                ],
-                Divine: [
-                    `Morning: Visit the most revered temples and shrines of ${destination}`,
-                    `Evening: Attend the mesmerizing evening aarti ceremony`,
-                    `Morning: Meditation session at a peaceful ashram`,
-                    `Afternoon: Explore spiritual ghats and sacred tanks`,
-                ],
-                Foodie: [
-                    `Morning: Breakfast at a famous local dhaba`,
-                    `Afternoon: Street food tour through the old market of ${destination}`,
-                    `Evening: Rooftop dinner with local cuisine tasting`,
-                    `Afternoon: Spice market tour and cooking class`,
-                ],
-                Adventure: [
-                    `Morning: Thrilling adventure sports — rafting or rock climbing near ${destination}`,
-                    `Afternoon: Jeep safari or cycling tour through rugged terrain`,
-                    `Morning: Zip-lining or paragliding with panoramic views`,
-                    `Afternoon: Off-road exploration to hidden waterfalls`,
-                ],
-                Photos: [
-                    `Morning: Golden hour photography at the most scenic spots`,
-                    `Afternoon: Portrait session in traditional markets and alleys`,
-                    `Evening: Blue hour shoot at the iconic landmarks of ${destination}`,
-                    `Morning: Architectural photography tour of old city`,
-                ],
-            };
-
-            const dayTitles = [
-                `Arrival & First Impressions`,
-                `Deep Cultural Dive`,
-                `Hidden Gems & Local Life`,
-                `Adventure & Exploration`,
-                `Culinary Journey`,
-                `Sacred Spaces & Sunset`,
-                `Relaxation & Departure`,
-                `Off the Beaten Path`,
-                `Farewell to ${destination}`,
-                `Memories to Last Forever`,
-            ];
-
-            const dayDescriptions = [
-                `Begin your journey with the sights and sounds that make ${destination} unforgettable`,
-                `Immerse yourself in the rich culture and traditions that define this remarkable place`,
-                `Discover the secret spots and authentic experiences only locals know about`,
-                `Push your limits and create thrilling memories in and around ${destination}`,
-                `Let the flavors of ${destination} tell the story of its people and heritage`,
-                `Connect with the spiritual soul of ${destination} as the sun sets`,
-                `Savour the last moments in ${destination} before heading home`,
-                `Venture beyond the tourist trail to find the real ${destination}`,
-                `A perfect final day to soak in everything ${destination} has to offer`,
-                `One last adventure before saying goodbye to this incredible destination`,
-            ];
-
-            const itinerary = Array.from({ length: duration }, (_, i) => {
-                const activities: string[] = [];
-                const pool: string[] = selectedInterests.flatMap(
-                    (interest) => activityTemplates[interest] || []
-                );
-                
-                // Get 3 unique activities per day
-                const shuffled = [...pool].sort(() => Math.random() - 0.5);
-                for (let j = 0; j < 3 && j < shuffled.length; j++) {
-                    activities.push(shuffled[j]);
-                }
-                if (activities.length < 3) {
-                    activities.push(`Evening: Leisurely stroll exploring the streets of ${destination}`);
-                }
-
-                return {
-                    day: i + 1,
-                    title: dayTitles[i] || `Day ${i + 1} in ${destination}`,
-                    description: dayDescriptions[i] || `Another wonderful day exploring ${destination}`,
-                    activities,
-                };
+            const response = await fetch('/api/plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    destination,
+                    duration,
+                    interests
+                }),
             });
 
-            const plan = {
-                plan_title: `${duration}-Day Journey to ${destination}`,
-                itinerary,
-                safety_info: {
-                    police: '100 / 112',
-                    ambulance: '102',
-                    fire: '101',
-                    tips: [
-                        'Keep your belongings secure in crowded areas.',
-                        'Use official transport apps or prepaid taxis.',
-                        'Carry a physical map and a power bank.',
-                        'Inform someone of your itinerary daily.',
-                    ],
-                    local_advice: `When visiting ${destination}, respect local customs and dress modestly at religious sites.`,
-                },
-            };
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate itinerary');
+            }
 
-            setPlan(plan);
-        } catch (error) {
+            const data = await response.json();
+            setPlan(data);
+        } catch (error: any) {
             console.error(error);
-            alert('Something went wrong. Please try again.');
+            alert(error.message || 'Something went wrong. Please ensure your GEMINI_API_KEY is set in Vercel.');
         } finally {
             setLoading(false);
         }
     };
+
 
     const downloadItinerary = async () => {
         if (!plan) return;
@@ -461,3 +368,5 @@ export default function Planner() {
         </div>
     );
 }
+
+// Trigger: 03/26/2026 16:37:16
